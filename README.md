@@ -15,4 +15,4 @@ To use **Minimap Scrollbar** in your Flutter project, add it to your `pubspec.ya
 
 ```yaml
 dependencies:
-  minimap_scrollbar: ^1.0.0# minimap_scrollbar
+  minimap_scrollbar: ^1.0.0
