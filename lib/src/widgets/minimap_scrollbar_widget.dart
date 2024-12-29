@@ -5,31 +5,23 @@ import 'package:flutter/rendering.dart';
 
 import '../resources/minimap_image_painter.dart';
 
-/// A live mirror widget that captures & displays a miniature, synchronised view
-/// of its child widget. The mirror image updates every 2 seconds to reflect
-/// the current state of the child widget, allowing real-time monitoring and
-/// quick navigation of scrollable content.
-///
-/// Key features:
-/// - Creates a scaled-down, interactive minimap of the child widget
-/// - Provides a movable highlight indicating current viewport position
-/// - Allows scrolling and navigation through the minimap
-/// - Automatically updates minimap image periodically
+enum MinimapPosition { left, right, top, bottom }
+
 class MinimapScrollbarWidget extends StatefulWidget {
   const MinimapScrollbarWidget({
     super.key,
     required this.child,
-    this.miniWidth = 120.0,
-    this.scaleFactor = 0.3,
+    this.miniSize = 100.0,
+    this.scaleFactor = 0.1,
     this.highlightColor = Colors.blue,
-    this.viewportHeight = 200.0,
+    this.position = MinimapPosition.right,
   });
 
   final Widget child;
-  final double miniWidth;
+  final double miniSize;
   final double scaleFactor;
   final Color highlightColor;
-  final double viewportHeight;
+  final MinimapPosition position;
 
   @override
   State<MinimapScrollbarWidget> createState() => _MinimapScrollbarWidgetState();
@@ -41,18 +33,20 @@ class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
 
   ui.Image? _miniImage;
   Timer? _imageUpdateTimer;
-  late double assignedViewPortHeight;
+  late double assignedViewPortSize;
+
+  bool get _isVertical =>
+      widget.position == MinimapPosition.left ||
+      widget.position == MinimapPosition.right;
 
   @override
   void initState() {
     super.initState();
-    assignedViewPortHeight = widget.viewportHeight;
-
     _scrollController.addListener(_updateHighlight);
     WidgetsBinding.instance.addPostFrameCallback((_) => _captureMiniImage());
 
     _imageUpdateTimer = Timer.periodic(
-      const Duration(seconds: 2),
+      const Duration(microseconds: 100),
       (_) => setState(_captureMiniImage),
     );
   }
@@ -91,11 +85,17 @@ class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
     }
   }
 
-  void _onMiniTapDown(TapDownDetails details, double miniHeight) {
+  void _onMinimapInteraction(
+    Offset localPosition,
+    double miniContentSize,
+  ) {
     if (!_scrollController.hasClients) return;
-    
-    final tapPositionRatio = details.localPosition.dy / miniHeight;
-    final targetScroll = tapPositionRatio * _scrollController.position.maxScrollExtent;
+
+    final ratio = _isVertical
+        ? localPosition.dy / miniContentSize
+        : localPosition.dx / miniContentSize;
+
+    final targetScroll = ratio * _scrollController.position.maxScrollExtent;
 
     _scrollController.jumpTo(
       targetScroll.clamp(
@@ -105,7 +105,7 @@ class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
     );
   }
 
-  double _calculateHighlightTop(double contentHeight, double viewportHeight) {
+  double _calculateHighlightPosition(double contentSize, double viewportSize) {
     final maxScrollExtent = _scrollController.position.maxScrollExtent;
     final currentScrollPosition = _scrollController.offset;
 
@@ -113,7 +113,7 @@ class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
         ? (currentScrollPosition / maxScrollExtent).clamp(0.0, 1.0)
         : 0.0;
 
-    final availableMovementSpace = contentHeight - viewportHeight;
+    final availableMovementSpace = contentSize - viewportSize;
     return scrollProgress * availableMovementSpace;
   }
 
@@ -121,105 +121,136 @@ class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        const headerHeight = 88;
-        final maxMiniHeight = MediaQuery.of(context).size.height - headerHeight;
+        final screenSize = MediaQuery.of(context).size;
+        const pageHeader = 88;
+        final maxSize =
+            _isVertical ? screenSize.height - pageHeader : screenSize.width;
 
-        assignedViewPortHeight = maxMiniHeight * widget.scaleFactor;
+        assignedViewPortSize = maxSize * widget.scaleFactor;
 
-        double? childHeight;
+        double? childSize;
         final childContext = _childKey.currentContext;
         if (childContext != null) {
           final childRenderBox = childContext.findRenderObject() as RenderBox?;
-          childHeight = childRenderBox?.size.height;
+          childSize = _isVertical
+              ? childRenderBox?.size.height
+              : childRenderBox?.size.width;
         }
 
-        final miniChildHeight = childHeight != null
-            ? (childHeight * widget.scaleFactor).clamp(0.0, maxMiniHeight)
+        final miniContentSize = childSize != null
+            ? (childSize * widget.scaleFactor).clamp(0.0, maxSize)
             : double.maxFinite;
 
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: constraints.maxWidth - widget.miniWidth,
-                    ),
-                    child: RepaintBoundary(
-                      key: _childKey,
-                      child: widget.child,
+        final scrollView = Expanded(
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            scrollDirection: _isVertical ? Axis.vertical : Axis.horizontal,
+            child: RepaintBoundary(
+              key: _childKey,
+              child: widget.child,
+            ),
+          ),
+        );
+
+        Widget buildHighlight() {
+          if (!_scrollController.hasClients) return const SizedBox();
+
+          final highlightPosition = _calculateHighlightPosition(
+            miniContentSize,
+            assignedViewPortSize,
+          );
+
+          return AnimatedPositioned(
+            duration: const Duration(milliseconds: 100),
+            top: _isVertical ? highlightPosition : 0,
+            left: !_isVertical ? highlightPosition : 0,
+            width: _isVertical ? widget.miniSize : assignedViewPortSize,
+            height: _isVertical ? assignedViewPortSize : widget.miniSize,
+            child: Container(
+              height: assignedViewPortSize,
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                border: Border.all(
+                  color: widget.highlightColor,
+                  width: 2,
+                ),
+              ),
+            ),
+          );
+        }
+
+        final minimap = SizedBox(
+          width: _isVertical ? widget.miniSize : double.infinity,
+          height: _isVertical ? double.infinity : widget.miniSize,
+          child: GestureDetector(
+            onTapDown: (details) => _onMinimapInteraction(
+              details.localPosition,
+              miniContentSize,
+            ),
+            onVerticalDragUpdate: _isVertical
+                ? (details) => _onMinimapInteraction(
+                      details.localPosition,
+                      miniContentSize,
+                    )
+                : null,
+            onHorizontalDragUpdate: !_isVertical
+                ? (details) => _onMinimapInteraction(
+                      details.localPosition,
+                      miniContentSize,
+                    )
+                : null,
+            child: Stack(
+              children: [
+                if (_miniImage != null)
+                  ConstrainedBox(
+                    constraints: BoxConstraints.tight(Size(
+                      _isVertical ? widget.miniSize : double.maxFinite,
+                      _isVertical ? double.maxFinite : widget.miniSize,
+                    )),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: CustomPaint(
+                        size: Size(
+                          _isVertical ? widget.miniSize : double.maxFinite,
+                          _isVertical ? double.maxFinite : widget.miniSize,
+                        ),
+                        painter: ImagePainter(
+                          _miniImage!,
+                          _isVertical ? widget.miniSize : miniContentSize,
+                          _isVertical ? miniContentSize : widget.miniSize,
+                        ),
+                      ),
                     ),
                   ),
+                Container(
+                  color: Colors.grey.withOpacity(0.1),
                 ),
-              ),
+                buildHighlight(),
+              ],
             ),
-            SizedBox(
-              width: widget.miniWidth,
-              child: GestureDetector(
-                onTapDown: (details) => _onMiniTapDown(details, miniChildHeight),
-                onVerticalDragUpdate: (details) {
-                  if (!_scrollController.hasClients) return;
-                  
-                  final dragRatio = details.localPosition.dy / miniChildHeight;
-                  final targetScroll = dragRatio * _scrollController.position.maxScrollExtent;
-
-                  _scrollController.jumpTo(
-                    targetScroll.clamp(
-                      0.0,
-                      _scrollController.position.maxScrollExtent,
-                    ),
-                  );
-                },
-                child: Stack(
-                  alignment: Alignment.topRight,
-                  children: [
-                    if (_miniImage != null)
-                      ConstrainedBox(
-                        constraints: BoxConstraints.tight(Size(widget.miniWidth, double.maxFinite)),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: CustomPaint(
-                            size: Size(widget.miniWidth, double.maxFinite),
-                            painter: ImagePainter(
-                              _miniImage!,
-                              widget.miniWidth,
-                              miniChildHeight,
-                            ),
-                          ),
-                        ),
-                      ),
-                    Container(
-                      color: Colors.grey.withOpacity(0.1),
-                    ),
-                    if (_scrollController.hasClients)
-                      AnimatedPositioned(
-                        duration: const Duration(milliseconds: 100),
-                        top: _calculateHighlightTop(
-                          miniChildHeight,
-                          assignedViewPortHeight,
-                        ),
-                        left: 0,
-                        right: 0,
-                        height: assignedViewPortHeight,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            border: Border.all(
-                              color: widget.highlightColor,
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          ),
         );
+
+        switch (widget.position) {
+          case MinimapPosition.left:
+            return Row(
+               crossAxisAlignment: CrossAxisAlignment.start,
+              children: [minimap, scrollView],
+            );
+          case MinimapPosition.right:
+            return Row(
+               crossAxisAlignment: CrossAxisAlignment.start,
+              children: [scrollView, minimap],
+            );
+          case MinimapPosition.top:
+            return Column(
+              children: [minimap, scrollView],
+            );
+          case MinimapPosition.bottom:
+            return Column(
+              children: [scrollView, minimap],
+            );
+        }
       },
     );
   }

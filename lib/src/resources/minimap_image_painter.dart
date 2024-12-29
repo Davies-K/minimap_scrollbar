@@ -10,7 +10,8 @@ class ImagePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint();
+    final paint = Paint()
+    ..filterQuality = FilterQuality.low;
     canvas.drawImageRect(
       image,
       Rect.fromLTWH(0, 0, miniWidth, image.height * 1.0),
@@ -19,6 +20,8 @@ class ImagePainter extends CustomPainter {
     );
   }
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+    @override
+  bool shouldRepaint(ImagePainter oldDelegate) {
+    return true;
+  }
 }
