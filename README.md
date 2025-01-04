@@ -1,6 +1,6 @@
 # Minimap Scrollbar
 
-**Minimap Scrollbar** is a Flutter widget that creates a miniature, synchronized view (minimap) of a scrollable content area. It allows users to quickly navigate large content by providing a scaled-down overview, along with a movable highlight that indicates the current viewport position. This widget is ideal for applications with large content, enabling users to jump to specific sections via the minimap.
+**Minimap Scrollbar** is a Flutter widget designed to enhance navigation in scrollable content areas by providing a miniature, synchronized overview of the content, enabling users to locate and jump to sections effortlessly. It allows users to quickly navigate large content by providing a scaled-down overview seamlessly integrated with Flutter's scrolling mechanisms. The movable highlight dynamically reflects the current viewport position, ensuring smooth and accurate navigation. This widget is ideal for applications with large content, such as code editors, document viewers, or data dashboards, enabling users to jump to specific sections via the minimap.
 
 ## Examples
 | ![Mini Code Editor](docs/src/assets/examples/mini_code_editor.gif) | ![Mini Document](docs/src/assets/examples/min_doc.gif) |
