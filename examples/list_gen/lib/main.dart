@@ -1,86 +1,34 @@
-import 'dart:math';
-
-import 'package:example/super_editor_demo.dart';
+// import 'package:example/masonry_grid/masonry_grid.dart';
+// import 'package:example/super_editor/super_editor_demo.dart';
 import 'package:flutter/material.dart';
-import 'package:minimap_scrollbar/minimap_scrollbar.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-class MinimapListGenExample extends StatelessWidget {
-  const MinimapListGenExample({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Minimap Scrollbar Example'),
-      ),
-      //  body: const SimpleDocumentEditor(), 
-
-      //  body: MinimapScrollbarWidget(
-      //   position: MinimapPosition.bottom,
-      //    child: SingleChildScrollView(
-      //     scrollDirection: Axis.horizontal,
-      //     child: Row(
-      //       children: List.generate(
-      //         50, // Number of containers
-      //         (index) => Container(
-      //           width: 500,
-      //           height: 500,
-      //           color: _getRandomColor(),
-      //           alignment: Alignment.center,
-      //           margin: const EdgeInsets.all(8),
-      //           child: Text(
-      //             'Container ${index + 1}',
-      //             style: const TextStyle(
-      //               color: Colors.white,
-      //               fontSize: 24,
-      //               fontWeight: FontWeight.bold,
-      //             ),
-      //           ),
-      //         ),
-      //       ),
-      //     ),
-      //          ),
-      //  ),
-    
+import 'code_editor/mini_code_editor.dart';
 
 
-      body: MinimapScrollbarWidget(
-        child: SingleChildScrollView(
-          child: Column(
-            children: List.generate(
-              100,
-              (index) => Container(
-                margin: const EdgeInsets.all(8),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Section ${index + 1}\nThis is some sample content to demonstrate scrolling.',
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ),
-            ),
-          ),
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp( MaterialApp(
+    theme: ThemeData(
+        textTheme: GoogleFonts.latoTextTheme(
         ),
       ),
-    );
-  }
+   
+    /// A widget that displays a mini code editor with a horizontal scrollbar.
+    /// from examples/list_gen/lib/code_editor/mini_code_editor.dart
+    /// [CodeEditor]
+    home: const CodeEditor(),
 
-   Color _getRandomColor() {
-    final Random random = Random();
-    return Color.fromARGB(
-      255,
-      random.nextInt(256),
-      random.nextInt(256),
-      random.nextInt(256),
-    );
-  }
-}
-void main() {
-  runApp(const MaterialApp(
-    home: MinimapListGenExample(),
+    /// A widget that displays a simple document editor with a vertical scrollbar.
+    /// from examples/list_gen/lib/super_editor/super_editor_demo.dart
+    /// [SimpleDocumentEditor]
+    // home: const SimpleDocumentEditor(),
+
+    /// A widget that displays a mini masonry grid with random colors and a horizontal scrollbar.
+    /// from examples/list_gen/lib/masonry_grid/masonry_grid.dart
+    /// [MiniMasonryGrid]
+    //  home: const MiniMasonryGrid(),
     debugShowCheckedModeBanner: false,
   ));
 }
+

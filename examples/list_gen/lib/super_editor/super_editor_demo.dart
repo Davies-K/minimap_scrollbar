@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:super_editor/super_editor.dart';
 import 'package:minimap_scrollbar/minimap_scrollbar.dart';
 
@@ -47,23 +48,25 @@ class _SimpleDocumentEditorState extends State<SimpleDocumentEditor> {
 
   @override
   Widget build(BuildContext context) {
-    return MinimapScrollbarWidget(
-      child: Column(
-        children: [
-          SuperEditor(
-            editor: DocumentEditor(document: _document),
-            stylesheet: defaultStylesheet.copyWith(
-              documentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-              // paragraph: defaultStylesheet.paragraph?.copyWith(
-              //   style: const TextStyle(
-              //     fontSize: 16,
-              //     height: 1.4,
-              //   ),
-              // ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Mini Super Editor',
+          style: GoogleFonts.lato(fontSize: 18),
+        ),
+      ),
+      body: MinimapScrollbarWidget(
+        child: Column(
+          children: [
+            SuperEditor(
+              editor: DocumentEditor(document: _document),
+              stylesheet: defaultStylesheet.copyWith(
+                documentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              ),
+              componentBuilders: defaultComponentBuilders,
             ),
-            componentBuilders: defaultComponentBuilders,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

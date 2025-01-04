@@ -5,6 +5,8 @@ import 'package:flutter/rendering.dart';
 
 import '../resources/minimap_image_painter.dart';
 
+/// The position of the minimap scrollbar in the [MinimapScrollbarWidget].
+/// The default value is [MinimapPosition.right].
 enum MinimapPosition { left, right, top, bottom }
 
 class MinimapScrollbarWidget extends StatefulWidget {
@@ -15,13 +17,39 @@ class MinimapScrollbarWidget extends StatefulWidget {
     this.scaleFactor = 0.1,
     this.highlightColor = Colors.blue,
     this.position = MinimapPosition.right,
+    this.headrHeight = 88.0,
+    this.imageUpdateInterval = 100,
   });
 
+  /// `child` is the widget that will be displayed in the main view.
+  /// This widget will be wrapped in a [SingleChildScrollView].
   final Widget child;
+
+  /// `miniSize` is the size of the minimap scrollbar.
+  /// The default value is 100.0 pixels.
   final double miniSize;
+
+  /// `scaleFactor` is the scale factor of the minimap scrollbar.
+  /// The default value is 0.1.
   final double scaleFactor;
+
+  /// `highlightColor` is the color of the minimap scrollbar.
+  /// The default value is [Colors.blue].
   final Color highlightColor;
+
+  /// `position` is the position of the minimap scrollbar.
+  /// The default value is [MinimapPosition.right].
+  /// If the value is [MinimapPosition.left], the minimap scrollbar will be placed on the left side.
   final MinimapPosition position;
+
+  /// `headrHeight` is the height of the header. above the minimap scrollbar.
+  /// The default value is 88.0 pixels (the height of the AppBar).
+  /// This is useful when the header is present above the minimap scrollbar.
+  final double headrHeight;
+
+  /// `imageUpdateInterval` is the interval at which the minimap image is updated.
+  /// The default value is 100 microseconds.
+  final int imageUpdateInterval;
 
   @override
   State<MinimapScrollbarWidget> createState() => _MinimapScrollbarWidgetState();
@@ -35,6 +63,7 @@ class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
   Timer? _imageUpdateTimer;
   late double assignedViewPortSize;
 
+  /// Returns `true` if the minimap scrollbar is vertical.
   bool get _isVertical =>
       widget.position == MinimapPosition.left ||
       widget.position == MinimapPosition.right;
@@ -45,8 +74,11 @@ class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
     _scrollController.addListener(_updateHighlight);
     WidgetsBinding.instance.addPostFrameCallback((_) => _captureMiniImage());
 
+    /// Update the minimap image every 100 microseconds.
+    /// This is necessary because the image may change due to scrolling.
+    /// The image is captured using a [Timer] to avoid unnecessary repaints.
     _imageUpdateTimer = Timer.periodic(
-      const Duration(microseconds: 100),
+      Duration(microseconds: widget.imageUpdateInterval),
       (_) => setState(_captureMiniImage),
     );
   }
@@ -75,9 +107,15 @@ class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
   void _captureMiniImage() {
     final boundary =
         _childKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+    final RenderBox? childBox =
+        _childKey.currentContext?.findRenderObject() as RenderBox?;
 
-    if (boundary != null) {
-      boundary.toImage(pixelRatio: widget.scaleFactor).then((image) {
+    if (boundary != null && childBox != null) {
+      boundary
+          .toImage(
+        pixelRatio: widget.scaleFactor,
+      )
+          .then((image) {
         if (mounted) {
           setState(() => _miniImage = image);
         }
@@ -122,9 +160,9 @@ class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final screenSize = MediaQuery.of(context).size;
-        const pageHeader = 88;
-        final maxSize =
-            _isVertical ? screenSize.height - pageHeader : screenSize.width;
+        final maxSize = _isVertical
+            ? screenSize.height - widget.headrHeight
+            : screenSize.width;
 
         assignedViewPortSize = maxSize * widget.scaleFactor;
 
@@ -147,7 +185,7 @@ class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
             scrollDirection: _isVertical ? Axis.vertical : Axis.horizontal,
             child: RepaintBoundary(
               key: _childKey,
-              child: widget.child,
+              child: ClipRect(child: widget.child),
             ),
           ),
         );
@@ -170,6 +208,7 @@ class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
               height: assignedViewPortSize,
               decoration: BoxDecoration(
                 color: Colors.transparent,
+                borderRadius: BorderRadius.circular(2),
                 border: Border.all(
                   color: widget.highlightColor,
                   width: 2,
@@ -183,6 +222,7 @@ class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
           width: _isVertical ? widget.miniSize : double.infinity,
           height: _isVertical ? double.infinity : widget.miniSize,
           child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTapDown: (details) => _onMinimapInteraction(
               details.localPosition,
               miniContentSize,
@@ -231,26 +271,26 @@ class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
           ),
         );
 
-        switch (widget.position) {
-          case MinimapPosition.left:
-            return Row(
-               crossAxisAlignment: CrossAxisAlignment.start,
+        return switch (widget.position) {
+          MinimapPosition.left => Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [minimap, scrollView],
-            );
-          case MinimapPosition.right:
-            return Row(
-               crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+          MinimapPosition.right => Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [scrollView, minimap],
-            );
-          case MinimapPosition.top:
-            return Column(
+            ),
+          MinimapPosition.top => Column(
+              mainAxisSize: MainAxisSize.min,
               children: [minimap, scrollView],
-            );
-          case MinimapPosition.bottom:
-            return Column(
+            ),
+          MinimapPosition.bottom => Column(
+              mainAxisSize: MainAxisSize.min,
               children: [scrollView, minimap],
-            );
-        }
+            ),
+        };
       },
     );
   }
