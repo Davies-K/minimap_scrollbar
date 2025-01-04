@@ -3,7 +3,7 @@ description: "A Flutter widget that provides a minimap scrollbar for easy naviga
 version: 0.1.0
 repository: https://github.com/Davies-K/minimap_scrollbar
 homepage: https://github.com/davies-k
-topics: ["scrollbar", "minimapscrollbar", "scroll", "scrollable", "minimapscrollbar"]
+topics: ["scrollbar", "minimap", "scroll", "scrollable",]
 funding: [https://buymeacoffee.com/davieskwarteng]
 
 environment:
