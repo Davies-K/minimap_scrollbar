@@ -341,7 +341,7 @@ class MyApp extends StatelessWidget {
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2024 Your Company. All rights reserved.</p>
+                <p>&copy; 2025 Your Company. All rights reserved.</p>
             </div>
         </div>
     </footer>
