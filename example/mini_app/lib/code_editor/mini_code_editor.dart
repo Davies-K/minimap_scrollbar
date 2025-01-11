@@ -593,28 +593,31 @@ class MyApp extends StatelessWidget {
           const SizedBox(height: 16),
           Expanded(
             child: MinimapScrollbarWidget(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF272822),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: _codeController != null
-                    ? CodeField(
-                        controller: _codeController!,
-                        textStyle: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 14,
-                        ),
-                        lineNumberStyle: LineNumberStyle(
-                          textStyle: TextStyle(
-                            color: Colors.grey[600],
+              imageUpdateInterval: 10500,
+              child: SingleChildScrollView(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF272822),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: _codeController != null
+                      ? CodeField(
+                          controller: _codeController!,
+                          textStyle: const TextStyle(
+                            fontFamily: 'monospace',
                             fontSize: 14,
                           ),
+                          lineNumberStyle: LineNumberStyle(
+                            textStyle: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                        )
+                      : const Center(
+                          child: CircularProgressIndicator(),
                         ),
-                      )
-                    : const Center(
-                        child: CircularProgressIndicator(),
-                      ),
+                ),
               ),
             ),
           ),
