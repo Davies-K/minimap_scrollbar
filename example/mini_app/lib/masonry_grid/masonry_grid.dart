@@ -55,6 +55,7 @@ class MiniMasonryGrid extends StatelessWidget {
       ),
       body: MinimapScrollbarWidget(
         position: MinimapPosition.bottom,
+
         /// The minimap will not be updated every time the scroll position changes.
         imageUpdateInterval: 1000000000000,
         miniSize: 80,

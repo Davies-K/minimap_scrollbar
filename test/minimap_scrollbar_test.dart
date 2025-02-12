@@ -3,7 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:minimap_scrollbar/minimap_scrollbar.dart';
 
 void main() {
-  testWidgets('MinimapScrollbarWidget displays child widget', (WidgetTester tester) async {
+  testWidgets('MinimapScrollbarWidget displays child widget',
+      (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -22,7 +23,8 @@ void main() {
     expect(find.byKey(const Key('child')), findsOneWidget);
   });
 
-  testWidgets('MinimapScrollbarWidget highlights correct position on scroll', (WidgetTester tester) async {
+  testWidgets('MinimapScrollbarWidget highlights correct position on scroll',
+      (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -38,7 +40,10 @@ void main() {
       ),
     );
 
-    final scrollController = tester.state<ScrollableState>(find.byType(Scrollable)).widget.controller!;
+    final scrollController = tester
+        .state<ScrollableState>(find.byType(Scrollable))
+        .widget
+        .controller!;
     scrollController.jumpTo(500);
     await tester.pumpAndSettle();
 
@@ -46,7 +51,8 @@ void main() {
     expect(find.byType(AnimatedPositioned), findsOneWidget);
   });
 
-  testWidgets('MinimapScrollbarWidget handles minimap interaction', (WidgetTester tester) async {
+  testWidgets('MinimapScrollbarWidget handles minimap interaction',
+      (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -67,7 +73,10 @@ void main() {
     await tester.pumpAndSettle();
 
     // Check if the scroll position is updated (this is a placeholder, actual implementation may vary)
-    final scrollController = tester.state<ScrollableState>(find.byType(Scrollable)).widget.controller!;
+    final scrollController = tester
+        .state<ScrollableState>(find.byType(Scrollable))
+        .widget
+        .controller!;
     expect(scrollController.offset, isNonZero);
   });
 }

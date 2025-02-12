@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+
 /// A custom painter that paints an image on a canvas.
 class ImagePainter extends CustomPainter {
   final ui.Image image;
@@ -10,9 +11,8 @@ class ImagePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..filterQuality = FilterQuality.low;
-    
+    final paint = Paint()..filterQuality = FilterQuality.low;
+
     canvas.drawImageRect(
       image,
       Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),

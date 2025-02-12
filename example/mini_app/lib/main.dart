@@ -5,15 +5,13 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'code_editor/mini_code_editor.dart';
 
-
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp( MaterialApp(
+  runApp(MaterialApp(
     theme: ThemeData(
-        textTheme: GoogleFonts.latoTextTheme(
-        ),
-      ),
-   
+      textTheme: GoogleFonts.latoTextTheme(),
+    ),
+
     /// A widget that displays a mini code editor with a horizontal scrollbar.
     /// from examples/list_gen/lib/code_editor/mini_code_editor.dart
     /// [CodeEditor]
@@ -31,4 +29,3 @@ void main() {
     debugShowCheckedModeBanner: false,
   ));
 }
-

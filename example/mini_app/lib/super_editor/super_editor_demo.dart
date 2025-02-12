@@ -61,7 +61,8 @@ class _SimpleDocumentEditorState extends State<SimpleDocumentEditor> {
             SuperEditor(
               editor: DocumentEditor(document: _document),
               stylesheet: defaultStylesheet.copyWith(
-                documentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                documentPadding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
               ),
               componentBuilders: defaultComponentBuilders,
             ),
