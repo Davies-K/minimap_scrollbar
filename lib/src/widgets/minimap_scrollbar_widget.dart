@@ -5,6 +5,54 @@ import 'package:flutter/rendering.dart';
 
 import '../resources/minimap_image_painter.dart';
 
+class ContentPlaceholder {
+  final double height;
+  final double width;
+
+  ContentPlaceholder({
+    required this.height,
+    required this.width,
+  });
+}
+
+class DummyPainter extends CustomPainter {
+  final List<ContentPlaceholder> placeholders;
+  final double totalWidth;
+  final double totalHeight;
+  final double scaleFactor;
+
+  DummyPainter({
+    required this.placeholders,
+    required this.totalWidth,
+    required this.totalHeight,
+    required this.scaleFactor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.grey.shade300
+      ..style = PaintingStyle.fill;
+
+    double currentY = 0;
+
+    for (var placeholder in placeholders) {
+      final rect = Rect.fromLTWH(
+        0,
+        currentY * scaleFactor,
+        placeholder.width * scaleFactor,
+        placeholder.height * scaleFactor,
+      );
+
+      canvas.drawRect(rect, paint);
+      currentY += placeholder.height;
+    }
+  }
+
+  @override
+  bool shouldRepaint(DummyPainter oldDelegate) => true;
+}
+
 /// The position of the minimap scrollbar in the [MinimapScrollbarWidget].
 /// The default value is [MinimapPosition.right].
 enum MinimapPosition { left, right, top, bottom }
@@ -19,6 +67,7 @@ class MinimapScrollbarWidget extends StatefulWidget {
     this.position = MinimapPosition.right,
     this.headrHeight = 88.0,
     this.imageUpdateInterval = 100,
+    this.useDummyRepresentation = false,
   });
 
   /// `child` is the widget that will be displayed in the main view.
@@ -51,11 +100,14 @@ class MinimapScrollbarWidget extends StatefulWidget {
   /// The default value is 100 microseconds.
   final int imageUpdateInterval;
 
+  final bool useDummyRepresentation;
+
   @override
   State<MinimapScrollbarWidget> createState() => _MinimapScrollbarWidgetState();
 }
 
 class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
+  final List<ContentPlaceholder> _placeholders = [];
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _childKey = GlobalKey();
 
@@ -72,15 +124,48 @@ class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
   void initState() {
     super.initState();
     _scrollController.addListener(_updateHighlight);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _captureMiniImage());
 
-    /// Update the minimap image every 100 microseconds.
-    /// This is necessary because the image may change due to scrolling.
-    /// The image is captured using a [Timer] to avoid unnecessary repaints.
-    _imageUpdateTimer = Timer.periodic(
-      Duration(microseconds: widget.imageUpdateInterval),
-      (_) => setState(_captureMiniImage),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.useDummyRepresentation) {
+        _generatePlaceholders();
+      } else {
+        _captureMiniImage();
+      }
+    });
+    // WidgetsBinding.instance.addPostFrameCallback((_) => _captureMiniImage());
+
+    // /// Update the minimap image every 100 microseconds.
+    // /// This is necessary because the image may change due to scrolling.
+    // /// The image is captured using a [Timer] to avoid unnecessary repaints.
+    // _imageUpdateTimer = Timer.periodic(
+    //   Duration(microseconds: widget.imageUpdateInterval),
+    //   (_) => setState(_captureMiniImage),
+    // );
+  }
+
+  void _generatePlaceholders() {
+    final RenderBox? childBox =
+        _childKey.currentContext?.findRenderObject() as RenderBox?;
+
+    if (childBox == null) return;
+
+    // Traverse the render tree to find all visible elements
+    void visitor(RenderObject? object) {
+      if (object == null) return;
+
+      if (object is RenderBox && object != childBox) {
+        object.localToGlobal(Offset.zero, ancestor: childBox);
+        _placeholders.add(ContentPlaceholder(
+          height: object.size.height,
+          width: object.size.width,
+        ));
+      }
+
+      object.visitChildren(visitor);
+    }
+
+    childBox.visitChildren(visitor);
+    setState(() {});
   }
 
   @override
@@ -218,6 +303,46 @@ class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
           );
         }
 
+        Widget buildMinimap() {
+          if (widget.useDummyRepresentation) {
+            return CustomPaint(
+              size: Size(
+                _isVertical ? widget.miniSize : double.maxFinite,
+                _isVertical ? double.maxFinite : widget.miniSize,
+              ),
+              painter: DummyPainter(
+                placeholders: _placeholders,
+                totalWidth: constraints.maxWidth,
+                totalHeight: constraints.maxHeight,
+                scaleFactor: widget.scaleFactor,
+              ),
+            );
+          } else {
+            return _miniImage != null
+                ? ConstrainedBox(
+                    constraints: BoxConstraints.tight(Size(
+                      _isVertical ? widget.miniSize : double.maxFinite,
+                      _isVertical ? double.maxFinite : widget.miniSize,
+                    )),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: CustomPaint(
+                        size: Size(
+                          _isVertical ? widget.miniSize : double.maxFinite,
+                          _isVertical ? double.maxFinite : widget.miniSize,
+                        ),
+                        painter: ImagePainter(
+                          _miniImage!,
+                          _isVertical ? widget.miniSize : miniContentSize,
+                          _isVertical ? miniContentSize : widget.miniSize,
+                        ),
+                      ),
+                    ),
+                  )
+                : const SizedBox();
+          }
+        }
+
         final minimap = SizedBox(
           width: _isVertical ? widget.miniSize : double.infinity,
           height: _isVertical ? double.infinity : widget.miniSize,
@@ -241,27 +366,7 @@ class _MinimapScrollbarWidgetState extends State<MinimapScrollbarWidget> {
                 : null,
             child: Stack(
               children: [
-                if (_miniImage != null)
-                  ConstrainedBox(
-                    constraints: BoxConstraints.tight(Size(
-                      _isVertical ? widget.miniSize : double.maxFinite,
-                      _isVertical ? double.maxFinite : widget.miniSize,
-                    )),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: CustomPaint(
-                        size: Size(
-                          _isVertical ? widget.miniSize : double.maxFinite,
-                          _isVertical ? double.maxFinite : widget.miniSize,
-                        ),
-                        painter: ImagePainter(
-                          _miniImage!,
-                          _isVertical ? widget.miniSize : miniContentSize,
-                          _isVertical ? miniContentSize : widget.miniSize,
-                        ),
-                      ),
-                    ),
-                  ),
+                buildMinimap(),
                 Container(
                   color: Colors.grey.withOpacity(0.1),
                 ),

@@ -56,6 +56,7 @@ class _SimpleDocumentEditorState extends State<SimpleDocumentEditor> {
         ),
       ),
       body: MinimapScrollbarWidget(
+        useDummyRepresentation: true,
         child: Column(
           children: [
             SuperEditor(
